@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
     int magicResult = magic(cpm_options);
-    printf("%d\n", magic(cpm_options));
+    printf("%d\n", magicResult);
     printf("%d - ERRNO\n", errno);
     perror("error");
     

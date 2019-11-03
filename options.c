@@ -18,7 +18,8 @@
 #include "options.h"
 
 
-struct CopymasterOptions ParseCopymasterOptions(int argc, char *argv[]) {
+struct CopymasterOptions ParseCopymasterOptions(int argc, char *argv[]) 
+{
     extern int optind;
     extern char* optarg;
 
@@ -60,7 +61,8 @@ struct CopymasterOptions ParseCopymasterOptions(int argc, char *argv[]) {
             { "sparse",    no_argument,       0, 'S' },
             { 0,             0,               0,  0  },
         };
-        c = getopt_long(argc, argv, "fsc:oal:Ddm:i:u:Kt:S", long_options, &option_index);
+        c = getopt_long(argc, argv, "fsc:oal:Ddm:i:u:Kt:S", 
+                        long_options, &option_index);
         if (c == -1)
             break; 
         
@@ -168,6 +170,7 @@ struct CopymasterOptions ParseCopymasterOptions(int argc, char *argv[]) {
     return cpm_options;
 }
 
+
 // |######################################################################|
 // | * * * * * * * * * * * * *   MY FUNCTIONS   * * * * * * * * * * * * * |
 // V                                                                      V
@@ -269,10 +272,11 @@ int magic(struct CopymasterOptions cpm_options) {
         if(fd1 == -1) return E_OPENING;
         int fd2 = open(cpm_options.outfile, O_RDWR);
         if(fd2 == -1) {
-            int fd2 = creat(cpm_options.outfile, 0666);
+            fd2 = creat(cpm_options.outfile, 0666);
             if(fd2 == -1) {
                 return E_OPENING;
             }
+            errno = 0;
         }
 
         size_t ret = sparse(fd1, fd2);
@@ -384,6 +388,7 @@ int magic(struct CopymasterOptions cpm_options) {
     if(fd1 == -1){
         return E_INFILE;
     }
+    printf("%o\n", cpm_options.create_mode);
     int fd2 = open(cpm_options.outfile, flags, cpm_options.create_mode);
 
     size_t (*copyingFunc[])(int, int, off_t, off_t, int) = {fast_copy, slow_copy};
@@ -547,13 +552,12 @@ size_t sparse(int fdin, int fdout) {
 
 	/* get the blocksize used on the output media, allocate buffer */
 	if (fstat(fdout, &st) == -1) {
-		perror("fstat");
 		return E_FSTAT;
 	}
+
 	blocksize = st.st_blksize;
 	buf = (char*)malloc(blocksize);
 	if (!buf) {
-		perror("malloc");
 		return E_MALLOC;
 	} else {
         memset(buf, 0, sizeof(char)*blocksize);

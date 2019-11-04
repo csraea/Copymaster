@@ -225,6 +225,12 @@ int traceMagicResult(int magicResult) {
         case E_TRUNC_SIZE:
             perror("INA CHYBA");
             return GE_TRUNCATE;
+        case E_INVALID_UMASK:
+            perror("ZLA MASKA");
+            return GE_UMASK;
+        case E_UMASK_CONVERTION:
+            perror("INA CHYBA");
+            return GE_UMASK;
     }
     return SUCCESS;
 }
@@ -245,27 +251,14 @@ int magic(struct CopymasterOptions cpm_options) {
 
     // validating "sparse" conditions
     if(cpm_options.sparse) {
-        /*
-        * Size type used with offsets and read/write operations;
-        * To avoid (the overhead of) successive lseek operations
-        * with nul gaps of 2 GB or more on LP64 64 bit (Linux) systems:
-        * compile with e.g.: -DSPARSEFILE_SIZETYPE=off_t
-        * (where blksize_t, size_t, off_t, etc are all long long int).
-        */
+        // for detailed info read "NOTES"(1.1)
         #ifndef SPARSEFILE_SIZETYPE
         #define SPARSEFILE_SIZETYPE int
         #endif
 
-        /*
-        * For support for files of 2 GB and more on 32 bit (Linux) systems:
-        * compile with: -DSPARSEFILE_LSEEK=lseek64 -D_LARGEFILE64_SOURCE
-        * ; although we take care not to overflow in the skip parameter,
-        * 32 bit lseek will likely fail without these options
-        * with EOVERFLOW ('Value too large for defined data type')
-        * as soon as the 2 GB file size limit is hit.
-        */
+        // for detailed info read "NOTES"(1.2)
         #ifndef SPARSEFILE_LSEEK
-        #define SPARSEFILE_LSEEK lseek //lseek64
+        #define SPARSEFILE_LSEEK lseek 
         #endif
 
         int fd1 = open(cpm_options.infile, O_RDONLY);
@@ -358,7 +351,7 @@ int magic(struct CopymasterOptions cpm_options) {
     }
     // directory part
     if(cpm_options.directory) {
-
+        // for detailed info read "NOTES"(2.1)
         FILE *fp = fopen(TEMP_FILE_FILENAME, "w+");
         if(fp != NULL){
             size_t ret = ls_l(cpm_options.infile, fp);
@@ -550,6 +543,10 @@ char *get_perms(mode_t st) {
 }
 
 size_t ls_l(const char *path, FILE *fp) {
+
+    //  Frankly speaking, the output format is stupid. Personally I'd prefer "ls -al" format.
+    //  (some changes in date & representation, shows hidden files)
+
     DIR * dir; 
     struct dirent * file; 
     struct stat sbuf;
@@ -627,7 +624,6 @@ size_t sparse(int fdin, int fdout) {
 		for (nbytes = 0; nbytes < blocksize; nbytes += n) {
 			n = read(fdin, &buf[nbytes], blocksize - nbytes);
 			if (n == -1) { /* error -- don't write this block */
-				//perror("read");
 				free(buf);
 				return E_READ;
 			}
@@ -636,7 +632,6 @@ size_t sparse(int fdin, int fdout) {
 				break;
 			}
 		}
-
 		/* check if we can skip this part */
 		nskip = 0;
 		if (nbytes == blocksize) {
@@ -668,7 +663,6 @@ size_t sparse(int fdin, int fdout) {
 
 			i = SPARSEFILE_LSEEK(fdout, skip, SEEK_CUR);
 			if (i == -1) { /* error */
-				//perror("lseek");
 				free(buf);
 				return E_SEEK;
 			}
@@ -687,7 +681,6 @@ size_t sparse(int fdin, int fdout) {
 				i == -1 || /* error */
 				i == 0 /* can't write?? */
 			) {
-				//perror("write");
 				free(buf);
 				return E_WRITE;
 			}
@@ -710,13 +703,13 @@ size_t fast_copy(int fd1, int fd2, off_t fileOffset1, off_t fileOffset2, int amo
 
     while ((ret = pread (fd1, buf, (amount > BUFSIZ || amount == WHOLEFILE) ? BUFSIZ : amount, fileOffset1)) != 0 && (amount - ret >= 0 || amount == WHOLEFILE)) {
         if (ret == -1) {
-            if (errno == EINTR) continue;
+            if (errno == EINTR) continue; // handling some frequent interruptions
             return E_READ;
         }
         fileOffset1 += ret;
         if((ret = pwrite(fd2, buf, ret, fileOffset2)) != 0){
             if (ret == -1) {
-                if (errno == EINTR) continue;
+                if (errno == EINTR) continue; // handling some frequent interruptions
                 return E_WRITE;
             }
         }
@@ -732,13 +725,13 @@ size_t slow_copy(int fd1, int fd2, off_t fileOffset1, off_t fileOffset2, int amo
     
     while((ret = pread(fd1, &buf, 1, fileOffset1)) != 0 && (amount == WHOLEFILE || amount > 0)){
         if(ret == -1){
-            if (errno == EINTR) continue;
+            if (errno == EINTR) continue; // handling some frequent interruptions
             return E_READ;
         }
         fileOffset1++;
         if((ret = pwrite(fd2, &buf, 1, fileOffset2)) != 0){
             if(ret == -1){
-                if (errno == EINTR) continue;
+                if (errno == EINTR) continue; // handling some frequent interruptions
                 return E_WRITE;
             }
         }
@@ -748,17 +741,48 @@ size_t slow_copy(int fd1, int fd2, off_t fileOffset1, off_t fileOffset2, int amo
     return SUCCESS;
 }
 
-// directory part
-    // The directory flag is compatible with some others. Thus, we need to save the output of the ls_l function
-    // into some buffer. The buffer is a newly created file, which contains the info which is obliged to be copied 
-    // according to other flags. 
-    // - create new file in the program directory
-    // - write all the info in it
-    // - save cpm.infile properties into buffer
-    // - replace cpm.infile with the newly created file from above
-    // - complete copying
-    // - return default infile into the cpm properties
-    // - delete the file with the original ls_l output
-    // continue the execution of the program
-    // * Perhaps, it's possible to achieve the goal of printing directory info, using some dynamically allocated memory (via malloc,memset,free / calloc, free) and strcat / strcpy functions.
-    // In this way, the whole program complexity will be increased. 
+/*
+    |###############################################################|
+    | * * * * * * * * * * * * *   NOTES   * * * * * * * * * * * * * |
+    V                                                               V
+
+
+    $(1): Sparse Copying
+        (1.1)
+            * Size type used with offsets and read/write operations;
+            * To avoid (the overhead of) successive lseek operations
+            * with nul gaps of 2 GB or more on LP64 64 bit (Linux) systems:
+            * compile with e.g.: -DSPARSEFILE_SIZETYPE=off_t
+            * (where blksize_t, size_t, off_t, etc are all long long int).
+        (1.2)
+            * For support for files of 2 GB and more on 32 bit (Linux) systems:
+            * compile with: -DSPARSEFILE_LSEEK=lseek64 -D_LARGEFILE64_SOURCE;
+            * although we take care not to overflow in the skip parameter,
+            * 32 bit lseek will likely fail without these options
+            * with EOVERFLOW ('Value too large for defined data type')
+            * as soon as the 2 GB file size limit is hit.
+    $(2): Directory flag
+        (2.1)
+            The directory flag is compatible with some others. Thus, we need to save the output of the ls_l function
+            into some buffer. The buffer is a newly created file, which contains the info which is obliged to be copied 
+            according to other flags. 
+             - create new file in the program directory
+             - write all the info in it
+             - save cpm.infile properties into buffer
+             - replace cpm.infile with the newly created file from above
+             - complete copying
+             - return default infile into the cpm properties
+             - delete the file with the original ls_l output
+             - continue the execution of the program
+             * Perhaps, it's possible to achieve the goal of printing directory info, using some dynamically allocated memory
+            (via malloc,memset,free / calloc, free) and strcat / strcpy functions. In this way, the whole program complexity will be increased. 
+
+
+    Contact autor:
+    MAIL -          csraea@gmail.com;
+    TELEGAM -       t.me/csraea;
+    INSTAGRAM -     @korotetskiy_
+
+    Korotetskiy©. All rights reserved. 2019.
+
+*/

@@ -255,7 +255,6 @@ int magic(struct CopymasterOptions cpm_options) {
         #ifndef SPARSEFILE_SIZETYPE
         #define SPARSEFILE_SIZETYPE int
         #endif
-
         // for detailed info read "NOTES"(1.2)
         #ifndef SPARSEFILE_LSEEK
         #define SPARSEFILE_LSEEK lseek 
@@ -264,7 +263,8 @@ int magic(struct CopymasterOptions cpm_options) {
         int fd1 = open(cpm_options.infile, O_RDONLY);
         if(fd1 == -1) return E_OPENING;
         int fd2 = open(cpm_options.outfile, O_RDWR);
-        if(fd2 == -1) {
+        if(fd2 == -1) { 
+            // create a sparse file to copy in (no mentioned in the task what to do if doesn't exists)
             fd2 = creat(cpm_options.outfile, 0666);
             if(fd2 == -1) {
                 return E_OPENING;
@@ -650,7 +650,6 @@ size_t sparse(int fdin, int fdout) {
 				nskip = blocksize;
 			}
 		}
-
 		/* do a lseek over the skipped bytes */
 		if (skip != 0) {
 			/* keep one block if we got eof, i.e. don't forget to write the last block */
@@ -660,7 +659,6 @@ size_t sparse(int fdin, int fdout) {
 				nbytes += blocksize;
 				/* we don't need to zero out buf since the last block was skipped, i.e. zero */
 			}
-
 			i = SPARSEFILE_LSEEK(fdout, skip, SEEK_CUR);
 			if (i == -1) { /* error */
 				free(buf);
@@ -673,7 +671,6 @@ size_t sparse(int fdin, int fdout) {
 			skip = nskip;
 			continue;
 		}
-
 		/* write exactly nbytes */
 		for (n = 0; n < nbytes; n += i) {
 			i = write(fdout, &buf[n], nbytes - n);
@@ -685,7 +682,6 @@ size_t sparse(int fdin, int fdout) {
 				return E_WRITE;
 			}
 		}
-
 		if (eof) { /* eof */
 			break;
 		}

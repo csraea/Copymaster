@@ -60,11 +60,11 @@ enum globalErrors {
     GE_TRUNCATE = 31,
     GE_SPARSE = 41,
     GE_CHMODE = 77
-    //GE_CHMODE             ???
+    //GE_CHMODE             ???  not mentioned in the task
 
 } globalErrors;
 
-// different error values have to be adjusted according to ones mentioned in the task
+// different error values have to be traced 
 enum errors {
     SUCCESS,
     E_INFILE,
@@ -95,7 +95,6 @@ enum errors {
     E_MALLOC,
     E_INVALID_UMASK,
     E_UMASK_CONVERTION
-    // end so on (for more accurate tracing the execution of a program)
 } errors;
 
 size_t fast_copy(int fd1, int fd2, off_t fileOffset1, off_t fileOffset2, int amount);

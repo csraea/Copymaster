@@ -545,7 +545,7 @@ char *get_perms(mode_t st) {
 size_t ls_l(const char *path, FILE *fp) {
 
     //  Frankly speaking, the output format is stupid. Personally I'd prefer "ls -al" format.
-    //  (some changes in date & representation, shows hidden files)
+    //  (some changes in date & time representation, shows hidden files)
 
     DIR * dir; 
     struct dirent * file; 

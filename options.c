@@ -508,7 +508,7 @@ mode_t umaskAdjustment(char umask_options[kUMASK_OPTIONS_MAX_SZ][4]) {
             if(newMask[j] < 0) newMask[j] = 0;
         }
     }
-    // reinitialze buffer 
+    // initialze buffer 
     memset(buf, 0, sizeof(buf));
     for(ssize_t l = 0; l < 4; l++) {
         buf[l] = (char)(newMask[l] + 48);

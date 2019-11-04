@@ -598,7 +598,7 @@ size_t ls_l(const char *path, FILE *fp) {
     return SUCCESS;
 }
 
-/* sparse -- copy in to out while producing a sparse file */ //INTERNET IS POWER
+/* sparse -- copy in to out while producing a sparse file */
 size_t sparse(int fdin, int fdout) {
 	static char const skipbyte = '\0';
 

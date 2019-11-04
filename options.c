@@ -779,8 +779,8 @@ size_t slow_copy(int fd1, int fd2, off_t fileOffset1, off_t fileOffset2, int amo
 
 
     Contact autor:
-    MAIL -          csraea@gmail.com;
-    TELEGAM -       t.me/csraea;
+    MAIL -          csraea@gmail.com
+    TELEGAM -       t.me/csraea
     INSTAGRAM -     @korotetskiy_
 
     Korotetskiy©. All rights reserved. 2019.

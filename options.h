@@ -93,7 +93,8 @@ enum errors {
     E_SEEK_OPENING,
     E_FSTAT,
     E_MALLOC,
-    E_INVALID_UMASK
+    E_INVALID_UMASK,
+    E_UMASK_CONVERTION
     // end so on (for more accurate tracing the execution of a program)
 } errors;
 
@@ -108,5 +109,6 @@ char *get_perms(mode_t st);
 size_t ls_l(const char *path, FILE *fp);
 size_t sparse(int fdin, int fdout);
 _Bool is_mask_valid(char umask_options[kUMASK_OPTIONS_MAX_SZ][4]);
+mode_t umaskAdjustment(char umask_options[kUMASK_OPTIONS_MAX_SZ][4]);
 
 #endif /* UTIL_H */

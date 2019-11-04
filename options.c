@@ -379,7 +379,9 @@ int magic(struct CopymasterOptions cpm_options) {
         _Bool ret = is_mask_valid(cpm_options.umask_options);
         if(ret != true) return E_INVALID_UMASK;
         else {
-
+            mode_t mask = umaskAdjustment(cpm_options.umask_options);
+            printf("%o\n", mask);
+            umask(mask);
         }
     }
 
@@ -388,7 +390,6 @@ int magic(struct CopymasterOptions cpm_options) {
     if(fd1 == -1){
         return E_INFILE;
     }
-    printf("%o\n", cpm_options.create_mode);
     int fd2 = open(cpm_options.outfile, flags, cpm_options.create_mode);
 
     size_t (*copyingFunc[])(int, int, off_t, off_t, int) = {fast_copy, slow_copy};
@@ -466,6 +467,64 @@ _Bool is_mask_valid(char umask_options[kUMASK_OPTIONS_MAX_SZ][4]){
         }
     }
     return true;
+}
+
+mode_t umaskAdjustment(char umask_options[kUMASK_OPTIONS_MAX_SZ][4]) {
+    int newMask[4] = {0, 0, 0, 0};
+    size_t bitNum = 0;
+    size_t permission = 0;
+    char buf[5];
+    for(size_t i = 0; i < kUMASK_OPTIONS_MAX_SZ; i++) {
+        //  UGO
+        switch(umask_options[i][0]) {
+            case 'u': case 'U':
+                bitNum = 1;
+                break;
+            case 'g': case 'G':
+                bitNum = 2;
+                break;
+            case 'o': case 'O':
+                bitNum = 3;
+                break;
+        }
+        //  PERMISSIONS
+        switch(umask_options[i][2]){
+            case 'r': case 'R':
+                permission = 4;
+                break;
+            case 'w': case 'W':
+                permission = 2;
+                break;
+            case 'x': case 'X':
+                permission = 1;
+                break;
+        }
+        //  WHAT TO DO
+        switch(umask_options[i][1]){
+            case '+':
+                newMask[bitNum] -= permission;
+                break;
+            case '-':
+                newMask[bitNum] += permission;
+                break;
+            case '=':
+                newMask[bitNum] = permission;
+        }
+        //  SOME SECURITY STUFF
+        for(size_t j = 0; j < 4; j++){
+            if(newMask[j] < 0) newMask[j] = 0;
+        }
+    }
+    // reinitialze buffer 
+    memset(buf, 0, sizeof(buf));
+    for(ssize_t l = 0; l < 4; l++) {
+        buf[l] = (char)(newMask[l] + 48);
+    }
+
+    //  FINALLY MAGIC!
+    long ret = strtol(buf, NULL, 8);
+    if(ret < 0) return E_UMASK_CONVERTION;
+    return (mode_t) ret;
 }
 
 char *get_perms(mode_t st) {

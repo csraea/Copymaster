@@ -244,6 +244,8 @@ int magic(struct CopymasterOptions cpm_options) {
     size_t copying_mode = 0;
     int flags = O_WRONLY;
 
+BFLAGS:
+
     // setting copying mode
     if(cpm_options.slow) {
         copying_mode = 1;
@@ -284,6 +286,26 @@ int magic(struct CopymasterOptions cpm_options) {
             return E_LINK;
         } else {
             return SUCCESS;
+        }
+    }
+
+    // inode part
+    if(cpm_options.inode) {
+        struct stat *buf = NULL;
+        if(stat(cpm_options.outfile, buf) == -1){
+            return E_INODE_STAT;
+        } else {
+            if(cpm_options.inode_number != buf->st_ino){
+                return E_INODE_NUM;
+            }
+            //create the file if doesn't exist
+            int ret = open(cpm_options.outfile, O_RDWR);
+            if(ret == -1) {
+                cpm_options.create = 1;
+                cpm_options.create_mode = 0766;
+            } else {
+                close(ret);
+            }
         }
     }
 
@@ -338,17 +360,7 @@ int magic(struct CopymasterOptions cpm_options) {
 
         }
     }
-    // inode part
-    if(cpm_options.inode) {
-        struct stat *buf = NULL;
-        if(stat(cpm_options.outfile, buf) == -1){
-            return E_INODE_STAT;
-        } else {
-            if(cpm_options.inode_number != buf->st_ino){
-                return E_INODE_NUM;
-            }
-        }
-    }
+
     // directory part
     if(cpm_options.directory) {
         // for detailed info read "NOTES"(2.1)
@@ -390,10 +402,16 @@ int magic(struct CopymasterOptions cpm_options) {
     size_t copyResult = (*copyingFunc[copying_mode])(fd1, fd2, fileOffset1, fileOffset2, amount);
     if(copyResult != SUCCESS) return copyResult;
 
+    // validating "delete" part
+    if(cpm_options.delete_opt) {
+        int unlinkResult = unlink(cpm_options.infile);
+        if(unlinkResult == -1) return E_DELETE;
+    }
+
     // validating "truncate" attributes
     if(cpm_options.truncate) {
         if(cpm_options.truncate_size < 0) return E_TRUNC_SIZE;
-        int truncResult = ftruncate(fd1, cpm_options.truncate_size);
+        int truncResult = truncate(cpm_options.infile, cpm_options.truncate_size);
         if(truncResult == -1) return E_TRUNC;
     }
 
@@ -404,15 +422,16 @@ int magic(struct CopymasterOptions cpm_options) {
         }
         int ret = fchmod(fd2, cpm_options.chmod_mode);
         if(ret == -1) {
-            return E_CHMODE;
+            cpm_options.create = 1;
+            cpm_options.create_mode = 0766;
+            close(fd1);
+            close(fd2);
+            goto BFLAGS;
         }
     }
 
-    // validating "delete" part
-    if(cpm_options.delete_opt) {
-        int unlinkResult = unlink(cpm_options.infile);
-        if(unlinkResult == -1) return E_DELETE;
-    }
+    close(fd1);
+    close(fd2);
 
     return 0;
 }
@@ -771,7 +790,7 @@ size_t slow_copy(int fd1, int fd2, off_t fileOffset1, off_t fileOffset2, int amo
              - delete the file with the original ls_l output
              - continue the execution of the program
              * Perhaps, it's possible to achieve the goal of printing directory info, using some dynamically allocated memory
-            (via malloc,memset,free / calloc, free) and strcat / strcpy functions. In this way, the whole program complexity will be increased. 
+            (via malloc, memset, free / calloc, free) and strcat / strcpy functions. In this way, the whole program complexity will be increased. 
 
 
     Contact autor:

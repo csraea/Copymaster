@@ -189,8 +189,11 @@ int traceMagicResult(int magicResult) {
         case E_CREATE_MODE:
             perror("CHYBNE PRAVA");
             return GE_CREATE;
-        case E_APPEND_NEXISTS:
+        case E_APPEND_NEXISTS: 
             perror("SUBOR NEEXISTUJE");
+            return GE_APPEND;
+        case E_APPEND_PERMISSIONS:
+            perror("INA CHYBA");
             return GE_APPEND;
         case E_OVERWRITE_NEXISTS:
             perror("SUBOR NEEXISTUJE");
@@ -244,6 +247,13 @@ int magic(struct CopymasterOptions cpm_options) {
     size_t copying_mode = 0;
     int flags = O_WRONLY;
 
+    if(!(cpm_options.append || cpm_options.chmod || cpm_options.create || cpm_options.delete_opt || cpm_options.directory || cpm_options.fast || cpm_options.inode || cpm_options.link
+        || cpm_options.lseek || cpm_options.overwrite || cpm_options.slow || cpm_options.sparse || cpm_options.truncate || cpm_options.umask)) {
+    
+        cpm_options.create = 1;
+        cpm_options.create_mode = 0766;
+        cpm_options.overwrite = 1;
+    }
 BFLAGS:
 
     // setting copying mode
@@ -292,7 +302,7 @@ BFLAGS:
     // inode part
     if(cpm_options.inode) {
         struct stat *buf = NULL;
-        if(stat(cpm_options.outfile, buf) == -1){
+        if(stat(cpm_options.infile, buf) == -1){
             return E_INODE_STAT;
         } else {
             if(cpm_options.inode_number != buf->st_ino){
@@ -329,6 +339,9 @@ BFLAGS:
         if((fd2 = open(cpm_options.outfile, O_RDONLY)) == -1) {
             return E_APPEND_NEXISTS;
         } else {
+            close(fd2);
+            fd2 = open(cpm_options.outfile, O_RDWR);    // check permissions 
+            if(fd2 == -1) return E_APPEND_PERMISSIONS;  // whether write pesmissions are present
             fileOffset2 = lseek(fd2, 0, SEEK_END);
             close(fd2);
         }

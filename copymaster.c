@@ -15,17 +15,8 @@ int main(int argc, char* argv[]) {
     for(int i = 0; i < argc; i++) {
         puts(argv[i]);
     }
-    //-------------------------------------------------------------------
-    // Kontrola hodnot prepinacov
-    //-------------------------------------------------------------------
-
-    // Vypis hodnot prepinacov odstrante z finalnej verzie
     
     PrintCopymasterOptions(&cpm_options);
-    
-    //-------------------------------------------------------------------
-    // Osetrenie prepinacov pred kopirovanim
-    //-------------------------------------------------------------------
     
     if (args_control(cpm_options) == E_ARGS) {
         fprintf(stderr, "CHYBA PREPINACOV\n"); 
@@ -35,31 +26,6 @@ int main(int argc, char* argv[]) {
     printf("%d\n", magicResult);
     printf("%d - ERRNO\n", errno);
     perror("error");
-    
-    // TODO Nezabudnut dalsie kontroly kombinacii prepinacov ...
-    
-    //-------------------------------------------------------------------
-    // Kopirovanie suborov
-    //-------------------------------------------------------------------
-    
-    // TODO Implementovat kopirovanie suborov
-    
-    // cpm_options.infile
-    // cpm_options.outfile
-    
-    //-------------------------------------------------------------------
-    // Vypis adresara
-    //-------------------------------------------------------------------
-    
-    if (cpm_options.directory) {
-        // TODO Implementovat vypis adresara
-    }
-        
-    //-------------------------------------------------------------------
-    // Osetrenie prepinacov po kopirovani
-    //-------------------------------------------------------------------
-    
-    // TODO Implementovat osetrenie prepinacov po kopirovani
     
     return traceMagicResult(magicResult);
 }

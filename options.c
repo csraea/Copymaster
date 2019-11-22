@@ -292,7 +292,7 @@ BFLAGS:
     // inode part
     if(cpm_options.inode) {
         struct stat *buf = NULL;
-        if(stat(cpm_options.outfile, buf) == -1){
+        if(stat(cpm_options.infile, buf) == -1){
             return E_INODE_STAT;
         } else {
             if(cpm_options.inode_number != buf->st_ino){
@@ -329,6 +329,9 @@ BFLAGS:
         if((fd2 = open(cpm_options.outfile, O_RDONLY)) == -1) {
             return E_APPEND_NEXISTS;
         } else {
+            close(fd2);
+            fd2 = open(cpm_options.outfile, O_RDWR);    // check permissions 
+            if(fd2 == -1) return E_APPEND_PERMISSIONS;  // whether write pesmissions are present
             fileOffset2 = lseek(fd2, 0, SEEK_END);
             close(fd2);
         }

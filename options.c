@@ -312,6 +312,33 @@ BFLAGS:
         }
     }
 
+    // directory part
+    if(cpm_options.directory) {
+        // for detailed info read "NOTES"(2.1)
+        FILE *fp = fopen(TEMP_FILE_FILENAME, "w+");
+        if(fp != NULL){
+            size_t ret = ls_l(cpm_options.infile, fp);
+            fclose(fp);
+            if(ret != SUCCESS) {
+                unlink(TEMP_FILE_FILENAME);
+                return ret;
+            } else {
+                strcpy(cpm_options.infile, TEMP_FILE_FILENAME);
+                cpm_options.delete_opt = 1;
+                
+                //check whether the outfile exists
+                int fd2 = open(cpm_options.outfile, O_RDONLY);
+                if(fd2 == -1) {
+                    cpm_options.create = 1;
+                    cpm_options.create_mode = 0766;
+                } else {
+                    close(fd2);
+                }
+            }
+        } else {
+            return E_CREATE_MODE;
+        }
+    }
     // validating "create" conditions
     if(cpm_options.create) {
         int fd2 = 0;
@@ -367,24 +394,6 @@ BFLAGS:
         }
     }
 
-    // directory part
-    if(cpm_options.directory) {
-        // for detailed info read "NOTES"(2.1)
-        FILE *fp = fopen(TEMP_FILE_FILENAME, "w+");
-        if(fp != NULL){
-            size_t ret = ls_l(cpm_options.infile, fp);
-            fclose(fp);
-            if(ret != SUCCESS) {
-                unlink(TEMP_FILE_FILENAME);
-                return ret;
-            } else {
-                strcpy(cpm_options.infile, TEMP_FILE_FILENAME);
-                cpm_options.delete_opt = 1;
-            }
-        } else {
-            return E_CREATE_MODE;
-        }
-    }
     // umask part
     if(cpm_options.umask){
         _Bool ret = is_mask_valid(cpm_options.umask_options);
@@ -396,6 +405,8 @@ BFLAGS:
         }
     }
 
+
+
     // copying
     int fd1 = open(cpm_options.infile, O_RDONLY);
     if(fd1 == -1){
@@ -404,9 +415,10 @@ BFLAGS:
     int fd2 = open(cpm_options.outfile, flags, cpm_options.create_mode);
 
     size_t (*copyingFunc[])(int, int, off_t, off_t, int) = {fast_copy, slow_copy};
-
     size_t copyResult = (*copyingFunc[copying_mode])(fd1, fd2, fileOffset1, fileOffset2, amount);
     if(copyResult != SUCCESS) return copyResult;
+
+
 
     // validating "delete" part
     if(cpm_options.delete_opt) {

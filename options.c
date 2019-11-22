@@ -192,6 +192,9 @@ int traceMagicResult(int magicResult) {
         case E_APPEND_NEXISTS:
             perror("SUBOR NEEXISTUJE");
             return GE_APPEND;
+        case E_APPEND_PERMISSIONS:
+            perror("INA CHYBA");
+            return GE_APPEND;
         case E_OVERWRITE_NEXISTS:
             perror("SUBOR NEEXISTUJE");
             return GE_OVERWRITE;

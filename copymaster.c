@@ -12,11 +12,11 @@ void PrintCopymasterOptions(struct CopymasterOptions* cpm_options);
 int main(int argc, char* argv[]) {
     struct CopymasterOptions cpm_options = ParseCopymasterOptions(argc, argv);
 
-    for(int i = 0; i < argc; i++) {
-        puts(argv[i]);
-    }
+    // for(int i = 0; i < argc; i++) {
+    //     puts(argv[i]);
+    // }
     
-    PrintCopymasterOptions(&cpm_options);
+    // PrintCopymasterOptions(&cpm_options);
     
     if (args_control(cpm_options) == E_ARGS) {
         fprintf(stderr, "CHYBA PREPINACOV\n"); 

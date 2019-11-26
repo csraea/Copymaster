@@ -234,9 +234,12 @@ int traceMagicResult(int magicResult) {
         case E_UMASK_CONVERTION:
             perror("INA CHYBA");
             return GE_UMASK;
-        default:
-            perror("UNEXPECTED CASE");
-            return magicResult;
+        case E_INODE_NUM:
+            perror("ZLY INODE");
+            return GE_INODE;
+        case E_INODE_STAT:
+            perror("ZLY TYP VSTUPNEHO SUBORU");
+            return GE_INODE;
     }
     return SUCCESS;
 }

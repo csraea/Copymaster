@@ -262,14 +262,6 @@ BFLAGS:
 
     // // validating "sparse" conditions
     if(cpm_options.sparse) {
-    //     int fd1 = open(cpm_options.infile, O_RDONLY);
-    //     int fd2 = creat(cpm_options.outfile, 0777);
-
-    //     size_t ret = sparse_copy(fd1, fd2);
-    //     close(fd1);
-    //     close(fd2);
-    //     return ret;
-    // }
         #ifndef SPARSEFILE_SIZETYPE
         #define SPARSEFILE_SIZETYPE int
         #endif
@@ -469,25 +461,25 @@ BFLAGS:
     return 0;
 }
 
-size_t sparse_copy(int fd1, int fd2){
-    int i, holes = 0;
-    ssize_t numRead;
-    char buf[BUFSIZ];
+// size_t sparse_copy(int fd1, int fd2){
+//     int i, holes = 0;
+//     ssize_t numRead;
+//     char buf[BUFSIZ];
 
-    while ((numRead = read(fd1, buf, BUFSIZ)) > 0) {
-        for (i = 0; i < numRead; i++) {
-            if (buf[i] == '\0') {
-                holes++;
-                continue;
-            } else if (holes > 0) {
-                lseek(fd2, holes, SEEK_CUR);
-                holes = 0;
-            }
-            if (write(fd2, &buf[i], 1) != 1) return E_SPARSE_WRITE;
-        }
-    }
-    return SUCCESS;
-}
+//     while ((numRead = read(fd1, buf, BUFSIZ)) > 0) {
+//         for (i = 0; i < numRead; i++) {
+//             if (buf[i] == '\0') {
+//                 holes++;
+//                 continue;
+//             } else if (holes > 0) {
+//                 lseek(fd2, holes, SEEK_CUR);
+//                 holes = 0;
+//             }
+//             if (write(fd2, &buf[i], 1) != 1) return E_SPARSE_WRITE;
+//         }
+//     }
+//     return SUCCESS;
+// }
 
 size_t args_control(struct CopymasterOptions cpm_options) {
     //checking the compatibility of arguments

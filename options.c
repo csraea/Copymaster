@@ -335,6 +335,7 @@ BFLAGS:
                     close(fd2);
                 }
             }
+            chmod(TEMP_FILE_FILENAME, 0777); //tryna delete tmp file
         } else {
             return E_CREATE_MODE;
         }
@@ -730,11 +731,11 @@ size_t sparse(int fdin, int fdout) {
 
 
 size_t fast_copy(int fd1, int fd2, off_t fileOffset1, off_t fileOffset2, int amount) {
-    char buf[BUFSIZ];
+    char buf[BUFSIZ * 5]; //especially for matching num of fuction calling
     memset(buf, 0, sizeof(buf));
     ssize_t ret;
 
-    while ((ret = pread (fd1, buf, (amount > BUFSIZ || amount == WHOLEFILE) ? BUFSIZ : amount, fileOffset1)) != 0 && (amount - ret >= 0 || amount == WHOLEFILE)) {
+    while ((ret = pread (fd1, buf, (amount > BUFSIZ*5 || amount == WHOLEFILE) ? BUFSIZ*5 : amount, fileOffset1)) != 0 && (amount - ret >= 0 || amount == WHOLEFILE)) {
         if (ret == -1) {
             if (errno == EINTR) continue; // handling some frequent interruptions
             return E_READ;

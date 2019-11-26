@@ -78,3 +78,13 @@ void PrintCopymasterOptions(struct CopymasterOptions* cpm_options)
     printf("truncate_size: %ld\n", cpm_options->truncate_size);
     printf("sparse:        %d\n", cpm_options->sparse);
 }
+
+/*
+    Contact autor:
+    MAIL -          csraea@gmail.com
+    TELEGAM -       t.me/csraea
+    INSTAGRAM -     @korotetskiy_
+
+    Korotetskiy©. All rights reserved. 2019.
+
+*/

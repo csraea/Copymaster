@@ -113,3 +113,12 @@ _Bool is_mask_valid(char umask_options[kUMASK_OPTIONS_MAX_SZ][4]);
 mode_t umaskAdjustment(char umask_options[kUMASK_OPTIONS_MAX_SZ][4]);
 
 #endif /* UTIL_H */
+/*
+    Contact autor:
+    MAIL -          csraea@gmail.com
+    TELEGAM -       t.me/csraea
+    INSTAGRAM -     @korotetskiy_
+
+    Korotetskiy©. All rights reserved. 2019.
+
+*/

@@ -11,21 +11,18 @@ void PrintCopymasterOptions(struct CopymasterOptions* cpm_options);
 
 int main(int argc, char* argv[]) {
     struct CopymasterOptions cpm_options = ParseCopymasterOptions(argc, argv);
-
     // for(int i = 0; i < argc; i++) {
     //     puts(argv[i]);
-    // }
-    
-    // PrintCopymasterOptions(&cpm_options);
-    
+    // }   
+    // PrintCopymasterOptions(&cpm_options);   
     if (args_control(cpm_options) == E_ARGS) {
         fprintf(stderr, "CHYBA PREPINACOV\n"); 
         exit(EXIT_FAILURE);
     }
     int magicResult = magic(cpm_options);
-    printf("%d\n", magicResult);
-    printf("%d - ERRNO\n", errno);
-    perror("error");
+    //printf("%d\n", magicResult);
+    //printf("%d - ERRNO\n", errno);
+    //perror("error");
     
     return traceMagicResult(magicResult);
 }

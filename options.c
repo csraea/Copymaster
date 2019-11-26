@@ -241,6 +241,7 @@ int traceMagicResult(int magicResult) {
             perror("ZLY TYP VSTUPNEHO SUBORU");
             return GE_INODE;
     }
+    perror("Copymaster succeeded :)")
     return SUCCESS;
 }
 
@@ -253,14 +254,12 @@ int magic(struct CopymasterOptions cpm_options) {
     size_t copying_mode = 0;
     int flags = O_WRONLY;
 
-BFLAGS:
-
     // setting copying mode
     if(cpm_options.slow) {
         copying_mode = 1;
     }
 
-    // // validating "sparse" conditions
+    // validating "sparse" conditions
     if(cpm_options.sparse) {
         #ifndef SPARSEFILE_SIZETYPE
         #define SPARSEFILE_SIZETYPE int
@@ -346,6 +345,7 @@ BFLAGS:
             return E_CREATE_MODE;
         }
     }
+
     // validating "create" conditions
     if(cpm_options.create) {
         int fd2 = 0;
@@ -360,6 +360,7 @@ BFLAGS:
             }
         }
     }
+
     // validating "append" conditions
     if(cpm_options.append) {
         int fd2 = 0;
@@ -373,6 +374,7 @@ BFLAGS:
             close(fd2);
         }
     }
+
     // validating "overwrite" conditions
     if(cpm_options.overwrite) {
         int fd2 = open(cpm_options.outfile, O_RDONLY);
@@ -383,6 +385,7 @@ BFLAGS:
             close(fd2);
         }
     }
+
     // lseek part
     if(cpm_options.lseek) {
         int fd1 = 0, fd2 = 0;
@@ -412,8 +415,7 @@ BFLAGS:
         }
     }
 
-
-
+//***************************************************************************************************
     // copying
     int fd1 = open(cpm_options.infile, O_RDONLY);
     if(fd1 == -1){
@@ -424,8 +426,7 @@ BFLAGS:
     size_t (*copyingFunc[])(int, int, off_t, off_t, int) = {fast_copy, slow_copy};
     size_t copyResult = (*copyingFunc[copying_mode])(fd1, fd2, fileOffset1, fileOffset2, amount);
     if(copyResult != SUCCESS) return copyResult;
-
-
+//***************************************************************************************************
 
     // validating "delete" part
     if(cpm_options.delete_opt) {
@@ -447,39 +448,15 @@ BFLAGS:
         }
         int ret = fchmod(fd2, cpm_options.chmod_mode);
         if(ret == -1) {
-            cpm_options.create = 1;
-            cpm_options.create_mode = 0766;
-            close(fd1);
-            close(fd2);
-            goto BFLAGS;
+            return E_CHMODE;
         }
     }
 
     close(fd1);
     close(fd2);
 
-    return 0;
+    return SUCCESS;
 }
-
-// size_t sparse_copy(int fd1, int fd2){
-//     int i, holes = 0;
-//     ssize_t numRead;
-//     char buf[BUFSIZ];
-
-//     while ((numRead = read(fd1, buf, BUFSIZ)) > 0) {
-//         for (i = 0; i < numRead; i++) {
-//             if (buf[i] == '\0') {
-//                 holes++;
-//                 continue;
-//             } else if (holes > 0) {
-//                 lseek(fd2, holes, SEEK_CUR);
-//                 holes = 0;
-//             }
-//             if (write(fd2, &buf[i], 1) != 1) return E_SPARSE_WRITE;
-//         }
-//     }
-//     return SUCCESS;
-// }
 
 size_t args_control(struct CopymasterOptions cpm_options) {
     //checking the compatibility of arguments
@@ -608,7 +585,7 @@ char *get_perms(mode_t st) {
 
 size_t ls_l(const char *path, FILE *fp) {
 
-    //  Frankly speaking, the output format is stupid. Personally I'd prefer "ls -al" format.
+    //  Frankly speaking, the output format is a little bit silly. Personally I'd prefer "ls -al" format.
     //  (some changes in date & time representation, shows hidden files)
 
     DIR * dir; 
@@ -650,7 +627,7 @@ size_t ls_l(const char *path, FILE *fp) {
         }
         fprintf(fp," %5d", (int)sbuf.st_size);
         localtime_r(&sbuf.st_mtime, &time);
-        /* Get localized date string. */
+        // Get localized date string. 
         if(time.tm_year == current->tm_year) strftime(datestring, sizeof(datestring), "%b %d %T", &time);
         else strftime(datestring, sizeof(datestring), "%b %d %Y", &time);
  
@@ -662,7 +639,7 @@ size_t ls_l(const char *path, FILE *fp) {
     return SUCCESS;
 }
 
-/* sparse -- copy in to out while producing a sparse file */
+// sparse -- copy in to out while producing a sparse file 
 size_t sparse(int fdin, int fdout) {
 	static const char skipbyte = '\0';
 
@@ -670,7 +647,7 @@ size_t sparse(int fdin, int fdout) {
 	SPARSEFILE_SIZETYPE blocksize, skip, nskip, nbytes, eof, n, i;
 	char* buf;
 
-	/* get the blocksize used on the output media, allocate buffer */
+	// get the blocksize used on the output media, allocate buffer 
 	if (fstat(fdout, &st) == -1) {
 		return E_FSTAT;
 	}
@@ -684,22 +661,22 @@ size_t sparse(int fdin, int fdout) {
     }
 
 	for (eof = 0, skip = 0;;) {
-		/* read exactly one block, if necessary in multiple chunks */
+		// read exactly one block, if necessary in multiple chunks
 		for (nbytes = 0; nbytes < blocksize; nbytes += n) {
 			n = read(fdin, &buf[nbytes], blocksize - nbytes);
-			if (n == -1) { /* error -- don't write this block */
+			if (n == -1) {    // error -- don't write this block 
 				free(buf);
 				return E_READ;
 			}
-			if (n == 0) { /* eof */
+			if (n == 0) {     // eof
 				eof++;
 				break;
 			}
 		}
-		/* check if we can skip this part */
+		// check if we can skip this part 
 		nskip = 0;
 		if (nbytes == blocksize) {
-			/* linear (slow?) search for a byte other than skipbyte */
+			// linear (slow?) search for a byte other than skipbyte
 			for (n = 0; n < blocksize; n++) {
 				if (buf[n] != skipbyte) {
 					break;
@@ -707,46 +684,43 @@ size_t sparse(int fdin, int fdout) {
 			}
 			if (n == blocksize) {
 				nskip = skip + blocksize;
-				if (nskip > 0) { /* mind 31 bit overflow */
+				if (nskip > 0) {      // mind 31 bit overflow 
 					skip = nskip;
 					continue;
 				}
 				nskip = blocksize;
 			}
 		}
-		/* do a lseek over the skipped bytes */
+		// do a lseek over the skipped bytes 
 		if (skip != 0) {
-			/* keep one block if we got eof, i.e. don't forget to write the last block */
+			// keep one block if we got eof, i.e. don't forget to write the last block
 			if (nbytes == 0) {
-				/* note that the following implies using the eof flag */
+				// note that the following implies using the eof flag
 				skip -= blocksize;
 				nbytes += blocksize;
-				/* we don't need to zero out buf since the last block was skipped, i.e. zero */
+				// we don't need to zero out buf since the last block was skipped, i.e. zero
 			}
 			i = SPARSEFILE_LSEEK(fdout, skip, SEEK_CUR);
-			if (i == -1) { /* error */
+			if (i == -1) {     // error
 				free(buf);
 				return E_SEEK;
 			}
 			skip = 0;
 		}
-		/* continue skipping if just skipped near overflow */
+		// continue skipping if just skipped near overflow 
 		if (nskip != 0) {
 			skip = nskip;
 			continue;
 		}
-		/* write exactly nbytes */
+		// write exactly nbytes
 		for (n = 0; n < nbytes; n += i) {
 			i = write(fdout, &buf[n], nbytes - n);
-			if (
-				i == -1 || /* error */
-				i == 0 /* can't write?? */
-			) {
+			if (i == -1 || /* error */	i == 0 /* can't write?? */) {
 				free(buf);
 				return E_WRITE;
 			}
 		}
-		if (eof) { /* eof */
+		if (eof) {      // eof
 			break;
 		}
 	}
@@ -801,6 +775,27 @@ size_t slow_copy(int fd1, int fd2, off_t fileOffset1, off_t fileOffset2, int amo
     return SUCCESS;
 }
 
+
+// size_t sparse_copy(int fd1, int fd2){
+//     int i, holes = 0;
+//     ssize_t numRead;
+//     char buf[BUFSIZ];
+
+//     while ((numRead = read(fd1, buf, BUFSIZ)) > 0) {
+//         for (i = 0; i < numRead; i++) {
+//             if (buf[i] == '\0') {
+//                 holes++;
+//                 continue;
+//             } else if (holes > 0) {
+//                 lseek(fd2, holes, SEEK_CUR);
+//                 holes = 0;
+//             }
+//             if (write(fd2, &buf[i], 1) != 1) return E_SPARSE_WRITE;
+//         }
+//     }
+//     return SUCCESS;
+// }
+
 /*
     |###############################################################|
     | * * * * * * * * * * * * *   NOTES   * * * * * * * * * * * * * |
@@ -825,18 +820,17 @@ size_t slow_copy(int fd1, int fd2, off_t fileOffset1, off_t fileOffset2, int amo
         (2.1)
             The directory flag is compatible with some others. Thus, we need to save the output of the ls_l function
             into some buffer. The buffer is a newly created file, which contains the info which is obliged to be copied 
-            according to other flags. 
+            according to the other flags. 
              - create new file in the program directory
              - write all the info in it
              - save cpm.infile properties into buffer
              - replace cpm.infile with the newly created file from above
              - complete copying
-             - return default infile into the cpm properties
-             - delete the file with the original ls_l output
+             - delete the temporary file with the original ls_l output
              - continue the execution of the program
              * Perhaps, it's possible to achieve the goal of printing directory info, using some dynamically allocated memory
             (via malloc, memset, free / calloc, free) and strcat / strcpy functions. In this way, the whole program complexity will be increased. 
-
+            Or at least it's possible to implement -D flag another way :)
 
     Contact autor:
     MAIL -          csraea@gmail.com

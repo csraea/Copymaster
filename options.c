@@ -260,45 +260,39 @@ BFLAGS:
         copying_mode = 1;
     }
 
-    if(cpm_options.sparse) {
-        int fd1 = open(cpm_options.infile, O_RDONLY);
-        int fd2 = creat(cpm_options.outfile, 0777);
-
-        printf("%d\n", fd1);
-        printf("%d\n", fd2);
-
-        size_t ret = sparse_copy(fd1, fd2);
-        close(fd1);
-        close(fd2);
-        return ret;
-    }
-
     // // validating "sparse" conditions
-    // if(cpm_options.sparse) {
-    //     // for detailed info read "NOTES"(1.1)
-    //     #ifndef SPARSEFILE_SIZETYPE
-    //     #define SPARSEFILE_SIZETYPE int
-    //     #endif
-    //     // for detailed info read "NOTES"(1.2)
-    //     #ifndef SPARSEFILE_LSEEK
-    //     #define SPARSEFILE_LSEEK lseek 
-    //     #endif
-
+    if(cpm_options.sparse) {
     //     int fd1 = open(cpm_options.infile, O_RDONLY);
-    //     if(fd1 == -1) return E_OPENING;
-    //     int fd2 = open(cpm_options.outfile, O_RDWR);
-    //     if(fd2 == -1) { 
-    //         // create a sparse file to copy in (no mentioned in the task what to do if doesn't exists)
-    //         fd2 = creat(cpm_options.outfile, 0666);
-    //         if(fd2 == -1) {
-    //             return E_OPENING;
-    //         }
-    //         errno = 0;
-    //     }
+    //     int fd2 = creat(cpm_options.outfile, 0777);
 
-    //     size_t ret = sparse(fd1, fd2);
-    //     return ret; // if sparse flag is going to be checked without any flags; else -- continue
+    //     size_t ret = sparse_copy(fd1, fd2);
+    //     close(fd1);
+    //     close(fd2);
+    //     return ret;
     // }
+        #ifndef SPARSEFILE_SIZETYPE
+        #define SPARSEFILE_SIZETYPE int
+        #endif
+        // for detailed info read "NOTES"(1.2)
+        #ifndef SPARSEFILE_LSEEK
+        #define SPARSEFILE_LSEEK lseek 
+        #endif
+
+        int fd1 = open(cpm_options.infile, O_RDONLY);
+        if(fd1 == -1) return E_OPENING;
+        int fd2 = open(cpm_options.outfile, O_RDWR);
+        if(fd2 == -1) { 
+            // create a sparse file to copy in (no mentioned in the task what to do if doesn't exists)
+            fd2 = creat(cpm_options.outfile, 0666);
+            if(fd2 == -1) {
+                return E_OPENING;
+            }
+            errno = 0;
+        }
+
+        size_t ret = sparse(fd1, fd2);
+        return ret; // if sparse flag is going to be checked without any flags; else -- continue
+    }
 
     // validating "link" conditions
     if(cpm_options.link) {
@@ -489,7 +483,7 @@ size_t sparse_copy(int fd1, int fd2){
                 lseek(fd2, holes, SEEK_CUR);
                 holes = 0;
             }
-            if (write(fd2, buf[i], 1) != 1) return E_SPARSE_WRITE;
+            if (write(fd2, &buf[i], 1) != 1) return E_SPARSE_WRITE;
         }
     }
     return SUCCESS;
@@ -573,18 +567,18 @@ mode_t umaskAdjustment(char umask_options[kUMASK_OPTIONS_MAX_SZ][4]) {
         //  WHAT TO DO
         switch(umask_options[i][1]){
             case '+':
-                newMask[bitNum] -= permission;
+                if(newMask[bitNum] >= (signed) permission && newMask[bitNum] + permission != 7) newMask[bitNum] -= permission;
                 break;
             case '-':
-                newMask[bitNum] += permission;
+                if(newMask[bitNum] <= (signed) permission && newMask[bitNum] - permission != 0) newMask[bitNum] += permission;
                 break;
             case '=':
                 newMask[bitNum] = permission;
         }
-        //  SOME SECURITY STUFF
-        for(size_t j = 0; j < 4; j++){
-            if(newMask[j] < 0) newMask[j] = 0;
-        }
+        // //  SOME SECURITY STUFF ?????????????????/
+        // for(size_t j = 0; j < 4; j++){
+        //     if(newMask[j] < 0) newMask[j] = 0;
+        // }
     }
     // initialze buffer 
     memset(buf, 0, sizeof(buf));
@@ -676,98 +670,98 @@ size_t ls_l(const char *path, FILE *fp) {
     return SUCCESS;
 }
 
-// /* sparse -- copy in to out while producing a sparse file */
-// size_t sparse(int fdin, int fdout) {
-// 	static char const skipbyte = '\0';
+/* sparse -- copy in to out while producing a sparse file */
+size_t sparse(int fdin, int fdout) {
+	static const char skipbyte = '\0';
 
-// 	struct stat st;
-// 	SPARSEFILE_SIZETYPE blocksize, skip, nskip, nbytes, eof, n, i;
-// 	char* buf;
+	struct stat st;
+	SPARSEFILE_SIZETYPE blocksize, skip, nskip, nbytes, eof, n, i;
+	char* buf;
 
-// 	/* get the blocksize used on the output media, allocate buffer */
-// 	if (fstat(fdout, &st) == -1) {
-// 		return E_FSTAT;
-// 	}
+	/* get the blocksize used on the output media, allocate buffer */
+	if (fstat(fdout, &st) == -1) {
+		return E_FSTAT;
+	}
 
-// 	blocksize = st.st_blksize;
-// 	buf = (char*)malloc(blocksize);
-// 	if (!buf) {
-// 		return E_MALLOC;
-// 	} else {
-//         memset(buf, 0, sizeof(char)*blocksize);
-//     }
+	blocksize = st.st_blksize;
+	buf = (char*)malloc(blocksize);
+	if (!buf) {
+		return E_MALLOC;
+	} else {
+        memset(buf, 0, sizeof(char)*blocksize);
+    }
 
-// 	for (eof = 0, skip = 0;;) {
-// 		/* read exactly one block, if necessary in multiple chunks */
-// 		for (nbytes = 0; nbytes < blocksize; nbytes += n) {
-// 			n = read(fdin, &buf[nbytes], blocksize - nbytes);
-// 			if (n == -1) { /* error -- don't write this block */
-// 				free(buf);
-// 				return E_READ;
-// 			}
-// 			if (n == 0) { /* eof */
-// 				eof++;
-// 				break;
-// 			}
-// 		}
-// 		/* check if we can skip this part */
-// 		nskip = 0;
-// 		if (nbytes == blocksize) {
-// 			/* linear (slow?) search for a byte other than skipbyte */
-// 			for (n = 0; n < blocksize; n++) {
-// 				if (buf[n] != skipbyte) {
-// 					break;
-// 				}
-// 			}
-// 			if (n == blocksize) {
-// 				nskip = skip + blocksize;
-// 				if (nskip > 0) { /* mind 31 bit overflow */
-// 					skip = nskip;
-// 					continue;
-// 				}
-// 				nskip = blocksize;
-// 			}
-// 		}
-// 		/* do a lseek over the skipped bytes */
-// 		if (skip != 0) {
-// 			/* keep one block if we got eof, i.e. don't forget to write the last block */
-// 			if (nbytes == 0) {
-// 				/* note that the following implies using the eof flag */
-// 				skip -= blocksize;
-// 				nbytes += blocksize;
-// 				/* we don't need to zero out buf since the last block was skipped, i.e. zero */
-// 			}
-// 			i = SPARSEFILE_LSEEK(fdout, skip, SEEK_CUR);
-// 			if (i == -1) { /* error */
-// 				free(buf);
-// 				return E_SEEK;
-// 			}
-// 			skip = 0;
-// 		}
-// 		/* continue skipping if just skipped near overflow */
-// 		if (nskip != 0) {
-// 			skip = nskip;
-// 			continue;
-// 		}
-// 		/* write exactly nbytes */
-// 		for (n = 0; n < nbytes; n += i) {
-// 			i = write(fdout, &buf[n], nbytes - n);
-// 			if (
-// 				i == -1 || /* error */
-// 				i == 0 /* can't write?? */
-// 			) {
-// 				free(buf);
-// 				return E_WRITE;
-// 			}
-// 		}
-// 		if (eof) { /* eof */
-// 			break;
-// 		}
-// 	}
+	for (eof = 0, skip = 0;;) {
+		/* read exactly one block, if necessary in multiple chunks */
+		for (nbytes = 0; nbytes < blocksize; nbytes += n) {
+			n = read(fdin, &buf[nbytes], blocksize - nbytes);
+			if (n == -1) { /* error -- don't write this block */
+				free(buf);
+				return E_READ;
+			}
+			if (n == 0) { /* eof */
+				eof++;
+				break;
+			}
+		}
+		/* check if we can skip this part */
+		nskip = 0;
+		if (nbytes == blocksize) {
+			/* linear (slow?) search for a byte other than skipbyte */
+			for (n = 0; n < blocksize; n++) {
+				if (buf[n] != skipbyte) {
+					break;
+				}
+			}
+			if (n == blocksize) {
+				nskip = skip + blocksize;
+				if (nskip > 0) { /* mind 31 bit overflow */
+					skip = nskip;
+					continue;
+				}
+				nskip = blocksize;
+			}
+		}
+		/* do a lseek over the skipped bytes */
+		if (skip != 0) {
+			/* keep one block if we got eof, i.e. don't forget to write the last block */
+			if (nbytes == 0) {
+				/* note that the following implies using the eof flag */
+				skip -= blocksize;
+				nbytes += blocksize;
+				/* we don't need to zero out buf since the last block was skipped, i.e. zero */
+			}
+			i = SPARSEFILE_LSEEK(fdout, skip, SEEK_CUR);
+			if (i == -1) { /* error */
+				free(buf);
+				return E_SEEK;
+			}
+			skip = 0;
+		}
+		/* continue skipping if just skipped near overflow */
+		if (nskip != 0) {
+			skip = nskip;
+			continue;
+		}
+		/* write exactly nbytes */
+		for (n = 0; n < nbytes; n += i) {
+			i = write(fdout, &buf[n], nbytes - n);
+			if (
+				i == -1 || /* error */
+				i == 0 /* can't write?? */
+			) {
+				free(buf);
+				return E_WRITE;
+			}
+		}
+		if (eof) { /* eof */
+			break;
+		}
+	}
 
-// 	free(buf);
-// 	return SUCCESS;
-// }
+	free(buf);
+	return SUCCESS;
+}
 
 
 size_t fast_copy(int fd1, int fd2, off_t fileOffset1, off_t fileOffset2, int amount) {

@@ -315,6 +315,7 @@ BFLAGS:
     // directory part
     if(cpm_options.directory) {
         // for detailed info read "NOTES"(2.1)
+        int fd3 = creat(TEMP_FILE_FILENAME, 0777);
         FILE *fp = fopen(TEMP_FILE_FILENAME, "w+");
         if(fp != NULL){
             size_t ret = ls_l(cpm_options.infile, fp);
@@ -335,7 +336,6 @@ BFLAGS:
                     close(fd2);
                 }
             }
-            chmod(TEMP_FILE_FILENAME, 0777); //tryna delete tmp file
         } else {
             return E_CREATE_MODE;
         }

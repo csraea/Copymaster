@@ -294,11 +294,11 @@ BFLAGS:
 
     // inode part
     if(cpm_options.inode) {
-        struct stat *buf = NULL;
-        if(stat(cpm_options.infile, buf) == -1){
+        struct stat buf;
+        if(stat(cpm_options.infile, &buf) == -1){
             return E_INODE_STAT;
         } else {
-            if(cpm_options.inode_number != buf->st_ino){
+            if(cpm_options.inode_number != buf.st_ino){
                 return E_INODE_NUM;
             }
             //create the file if doesn't exist

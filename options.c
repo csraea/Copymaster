@@ -316,6 +316,7 @@ BFLAGS:
     if(cpm_options.directory) {
         // for detailed info read "NOTES"(2.1)
         int fd3 = creat(TEMP_FILE_FILENAME, 0777);
+        close(fd3);
         FILE *fp = fopen(TEMP_FILE_FILENAME, "w+");
         if(fp != NULL){
             size_t ret = ls_l(cpm_options.infile, fp);

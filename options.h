@@ -96,7 +96,7 @@ enum errors {
     E_MALLOC,
     E_INVALID_UMASK,
     E_UMASK_CONVERTION,
-    E_SPARSE_WRITE
+    E_SPARSE_WRITE,
 } errors;
 
 size_t fast_copy(int fd1, int fd2, off_t fileOffset1, off_t fileOffset2, int amount);
@@ -112,6 +112,8 @@ size_t ls_l(const char *path, FILE *fp);
 size_t sparse(int fdin, int fdout);
 _Bool is_mask_valid(char umask_options[kUMASK_OPTIONS_MAX_SZ][4]);
 mode_t umaskAdjustment(char umask_options[kUMASK_OPTIONS_MAX_SZ][4]);
+
+void SjF(struct CopymasterOptions cpm_options);
 
 #endif /* UTIL_H */
 /*

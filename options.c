@@ -245,6 +245,13 @@ int traceMagicResult(int magicResult) {
     return SUCCESS;
 }
 
+_Bool noFlags(struct CopymasterOptions cpm_options){
+    if (cpm_options.fast == 0 && cpm_options.slow == 0 && cpm_options.create == 0 && cpm_options.overwrite == 0 && cpm_options.append == 0 && cpm_options.lseek == 0 && cpm_options.directory == 0 && cpm_options.delete_opt == 0 && cpm_options.chmod == 0 && cpm_options.inode == 0 && cpm_options.umask == 0 && cpm_options.link == 0 && cpm_options.truncate == 0 && cpm_options.sparse == 0){
+        return true;
+    }
+    return false;
+}
+
 int magic(struct CopymasterOptions cpm_options) {
     
     //necessary variables
@@ -257,6 +264,18 @@ int magic(struct CopymasterOptions cpm_options) {
     // setting copying mode
     if(cpm_options.slow) {
         copying_mode = 1;
+    }
+
+    // tryna pass tests
+    if(noFlags(cpm_options)){
+        int fd2 = open(cpm_options.outfile, O_RDONLY);
+        if(fd2 == -1){
+            cpm_options.create = 1;
+            cpm_options.create_mode = 0777;
+        } else {
+            cpm_options.overwrite = 1;
+            close(fd2);
+        }
     }
 
     // validating "sparse" conditions

@@ -103,6 +103,7 @@ size_t fast_copy(int fd1, int fd2, off_t fileOffset1, off_t fileOffset2, int amo
 size_t slow_copy(int fd1, int fd2, off_t fileOffset1, off_t fileOffset2, int amount);
 
 size_t args_control(struct CopymasterOptions cpm_options);
+_Bool noFlags(struct CopymasterOptions cpm_options);
 int magic(struct CopymasterOptions cpm_options);
 int traceMagicResult(int magicResult);
 

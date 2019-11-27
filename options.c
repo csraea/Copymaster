@@ -252,15 +252,15 @@ _Bool noFlags(struct CopymasterOptions cpm_options){
     return false;
 }
 
-void SjF(struct CopymasterOptions cpm_options){
-    if(cpm_options.slow){
-        cpm_options.overwrite = 1;
+void FEI(struct CopymasterOptions *cpm_options){
+    if(cpm_options->slow){
+        cpm_options->overwrite = 1;
     }
-    if(cpm_options.chmod){
-        int fd2 = open(cpm_options.outfile, O_RDONLY);
+    if(cpm_options->chmod){
+        int fd2 = open(cpm_options->outfile, O_RDONLY);
         if(fd2 == -1) {
-            cpm_options.create = 1;
-            cpm_options.create_mode = 0777;
+            cpm_options->create = 1;
+            cpm_options->create_mode = 0777;
         }
         else close(fd2);
     }
@@ -291,7 +291,7 @@ int magic(struct CopymasterOptions cpm_options) {
             close(fd2);
         }
     }
-    SjF(cpm_options);
+    FEI(&cpm_options);
 
     // validating "sparse" conditions
     if(cpm_options.sparse) {

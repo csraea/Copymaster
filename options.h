@@ -113,7 +113,7 @@ size_t sparse(int fdin, int fdout);
 _Bool is_mask_valid(char umask_options[kUMASK_OPTIONS_MAX_SZ][4]);
 mode_t umaskAdjustment(char umask_options[kUMASK_OPTIONS_MAX_SZ][4]);
 
-void SjF(struct CopymasterOptions cpm_options);
+void FEI(struct CopymasterOptions *cpm_options);
 
 #endif /* UTIL_H */
 /*
